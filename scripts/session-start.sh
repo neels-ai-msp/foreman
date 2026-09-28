@@ -1,11 +1,31 @@
 #!/bin/bash
-# Foreman SessionStart hook.
-# 1. Inject the lead's standing orders into the session.
+# Foreman SessionStart hook, run twice because Claude Code files away any hook context
+# over 10,000 characters and shows only a preview, so each half stays under that.
+# `orders`: inject the lead's standing orders.
+# `depth` (the default):
+# 1. Inject the depth rules.
 # 2. Keep the Mac from idle-sleeping while this Claude process lives (keep_awake option).
 # 3. If the current repo has unfinished team work, show the manager a message and
 #    tell the lead to ask before resuming. Never resume on its own.
 
 root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+
+if [ "${1:-depth}" = orders ]; then
+  FOREMAN_ORDERS="$root/orders.md" /usr/bin/python3 - <<'PY'
+import json, os
+try:
+    orders = open(os.environ["FOREMAN_ORDERS"]).read()
+except OSError:
+    orders = "orders.md is missing from the foreman plugin; reinstall it.\n"
+if os.environ.get("CLAUDE_PLUGIN_OPTION_AUTO_PR") == "false":
+    orders += "Option auto_pr is off: at Gate 2 present the branch and ask the manager before pushing or opening the pull request.\n"
+root = os.path.dirname(os.environ["FOREMAN_ORDERS"])
+orders += "\nBudget baseline: %s/budget.md. Spend script: /usr/bin/python3 %s/scripts/usage.py LEDGER.\n" % (root, root)
+context = "<foreman>\nYou have foreman. These are your standing orders as the lead:\n\n" + orders + "</foreman>"
+print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": context}}))
+PY
+  exit 0
+fi
 
 if [ "${CLAUDE_PLUGIN_OPTION_KEEP_AWAKE:-true}" != "false" ] && [ "$(uname)" = "Darwin" ]; then
   pid="${CLAUDE_PID:-}"
@@ -35,18 +55,14 @@ if repo=$(git rev-parse --show-toplevel 2>/dev/null); then
   done
 fi
 
-FOREMAN_ORDERS="$root/orders.md" FOREMAN_LEDGERS="$ledgers" /usr/bin/python3 - <<'PY'
+FOREMAN_DEPTH="$root/depth.md" FOREMAN_LEDGERS="$ledgers" /usr/bin/python3 - <<'PY'
 import json, os, re
 try:
-    orders = open(os.environ["FOREMAN_ORDERS"]).read()
+    depth = open(os.environ["FOREMAN_DEPTH"]).read()
 except OSError:
-    orders = "orders.md is missing from the foreman plugin; reinstall it.\n"
-if os.environ.get("CLAUDE_PLUGIN_OPTION_AUTO_PR") == "false":
-    orders += "Option auto_pr is off: at Gate 2 present the branch and ask the manager before pushing or opening the pull request.\n"
-root = os.path.dirname(os.environ["FOREMAN_ORDERS"])
-orders += "\nBudget baseline: %s/budget.md. Spend script: /usr/bin/python3 %s/scripts/usage.py LEDGER.\n" % (root, root)
+    depth = "depth.md is missing from the foreman plugin; reinstall it.\n"
 items = [re.sub(r'[^\x20-\x7e]|[";<>]', "", l) for l in os.environ["FOREMAN_LEDGERS"].split("\n") if l]
-context = "<foreman>\nYou have foreman. These are your standing orders as the lead:\n\n" + orders + "</foreman>"
+context = "<foreman-depth>\nForeman's depth rules, part of your standing orders as the lead:\n\n" + depth + "</foreman-depth>"
 out = {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": context}}
 if items:
     listing = "; ".join(items[:5]) + (" (+%d more)" % (len(items) - 5) if len(items) > 5 else "")
