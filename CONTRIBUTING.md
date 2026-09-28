@@ -45,7 +45,7 @@ CI runs on `macos-latest`.
 
 Documentation is part of the change, not a follow-up. If you alter the
 lifecycle, `orders.md` and the README's lifecycle list both have to agree with
-the code — the lead reads `orders.md` at runtime, so a stale line there is a
+the code — the lead reads `orders.md` and `depth.md` at runtime, so a stale line there is a
 bug, not a typo.
 
 ## Prose style

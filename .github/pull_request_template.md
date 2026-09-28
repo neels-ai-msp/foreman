@@ -7,4 +7,4 @@
 - [ ] `scripts/selftest.sh`, `tests/test_usage.sh`, `tests/test_setup.sh` pass
 - [ ] `claude plugin validate .` passes
 - [ ] `CHANGELOG.md` updated under `Unreleased`
-- [ ] Docs that describe this behaviour agree with it — `orders.md` especially
+- [ ] Docs that describe this behaviour agree with it — `orders.md` and `depth.md` especially

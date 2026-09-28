@@ -1,18 +1,32 @@
 # Foreman
 
 Run Claude Code as a small software team that reports to you. You are the
-manager. Claude is the lead, and it dispatches four specialist roles —
-architect, implementer, reviewer, qa — through a fixed lifecycle with two
-approval gates, escalation to your desktop, a running cost report, and state
+manager. Claude is the lead, and it dispatches five specialist roles —
+architect, implementer, reviewer, qa, pm — through a lifecycle sized to the
+work, with up to two approval gates, escalation to your desktop, a running cost report, and state
 that survives compaction, crashes, and quitting for the day. The full design
 is in [docs/team-design.md](docs/team-design.md); the lead's standing orders
-are [orders.md](orders.md).
+are [orders.md](orders.md) and [depth.md](depth.md).
 
-Foreman applies to feature work — anything that goes through brainstorming or
-has a plan. Questions, one-file fixes, and "just do it" requests are still
-answered directly by the session you are talking to.
+## Depth
+
+Before any code change, the lead asks how deep to go and recommends an
+answer. Name the depth in the request ("direct: fix the typo") and it skips
+the question. Plain questions are answered with no depth question.
+
+| Depth | For | What runs |
+|---|---|---|
+| `direct` | hotfixes, a new page or function | The lead codes it on a branch, tests it, and commits. No plan, no roles, no push |
+| `plan` | a complex bug fix, extending a feature | A plan you approve at Gate 1, built by the lead, one reviewer on the diff, a draft PR at Gate 2 |
+| `architect` | something the system cannot do yet | The full lifecycle below |
+| `product` | a new feature users will see | The full lifecycle plus a PM, who reviews the spec before the plan and the built feature at the end |
+
+A depth that turns out too shallow stops and asks to step up. It never steps
+down on its own.
 
 ## The lifecycle
+
+At `architect` and `product` depth:
 
 1. **Intake.** The lead brainstorms with you, then writes a spec.
 2. **Plan.** A task-by-task plan, with a per-phase dollar budget and a tier:
@@ -42,14 +56,17 @@ answered directly by the session you are talking to.
 | `implementer` | Opus | Implements exactly one task, TDD, smallest change that works, commits and self-reviews | Pick the next task, widen this one, or decide behaviour the plan left open |
 | `reviewer` | Opus | Reviews a diff for correctness, spec compliance, security, and over-engineering; runs the tests | Edit anything |
 | `qa` | Sonnet | Runs the suite, launches the app, walks the acceptance criteria as a user, probes edge cases, commits failing regression tests for bugs | Touch production code, or pass without evidence |
+| `pm` | Opus | At `product` depth, reviews the spec from the user's side before the plan, and walks the built feature against its user stories at the end | Edit anything |
 
 Each role returns at most 25 lines; anything longer goes to a file the return
 names. The lead reads the summary, not a transcript.
 
 ## What it gives you
 
-- **Two gates, and nothing built behind your back.** Plan approval before any
-  code, a draft PR at the end — never a merge.
+- **Two gates, and nothing built behind your back.** From `plan` depth up,
+  plan approval before any code and a draft PR at the end — never a merge.
+  `direct` has no gates: your depth answer is the approval, and nothing is
+  pushed.
 - **Peer review in pairs.** Standard-tier plan and final reviews run two
   reviewers as teammates with different lenses (correctness and simplicity by
   default; security, behaviour-preservation, performance, or data-integrity
@@ -64,8 +81,8 @@ names. The lead reads the summary, not a transcript.
   touching auth, secrets or crypto, an ambiguous requirement, and a task that
   fails review twice — stop the run and ask you, with options and a
   recommendation. Everything else the lead decides and records.
-- **Cost, per phase and actual.** Every plan ends with an estimated budget
-  built from measured runs ([budget.md](budget.md)). After each phase the
+- **Cost, per phase and actual.** Every `architect` and `product` plan ends
+  with an estimated budget built from measured runs ([budget.md](budget.md)). After each phase the
   spend script prices the real transcripts of the lead and every subagent, so
   Gate 2 shows what the feature cost against what it was estimated at. The
   budget never stops or shrinks the work; it only informs you.
