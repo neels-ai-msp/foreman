@@ -12,13 +12,16 @@ What one dispatch costs at Anthropic list price, one turn per API response. Fabl
 | reviewer, final solo or one pair member including the joint report | Opus | $1.81 to $2.68, plus $1.51 joint | $3 |
 | final fix wave | Opus | $1.93 to $5.71 on Fable | $2 (estimated) |
 | qa, one pass | Sonnet | $1.35 | $1.50 |
+| pm, spec review | Opus | not yet measured | $2 (estimated) |
+| pm, acceptance | Opus | not yet measured | $2 (estimated) |
 | lead, one API call | session model | $0.11 to $0.33 | $0.35 |
 
 ## Recipe
 
-- intake: lead calls × $0.35. Fifty calls for a small feature, a hundred for a large one.
+- intake: lead calls × $0.35. Fifty calls for a small feature, a hundred for a large one. At `product` depth add $2 for the PM's spec review.
 - plan-review: architects × $3 (one for small, two for standard) + 10 lead calls ($3.50).
 - execution, per task: $0.50 implementer + $1 reviewer + 30% fix allowance ($0.45) + 6 lead calls ($2.10). About $4 a task.
-- final-review: reviewers × $3 (one for small, two for standard) + $1.50 qa + $2 fix wave + $1 re-review + 15 lead calls ($5.25).
+- final-review: reviewers × $3 (one for small, two for standard) + $1.50 qa + $2 fix wave + $1 re-review + 15 lead calls ($5.25). At `product` depth add $2 for the PM's acceptance pass.
+- `plan` depth has no Budget table; the spend script still prices the run from the ledger.
 
 Round to whole dollars. Put the counts you multiplied in the table's Counts cell so the architect can check the arithmetic.
