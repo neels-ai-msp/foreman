@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.4.0
+
+The lead asks how deep to go before any code change, and recommends an
+answer: `direct` codes it and commits, `plan` builds from a plan you approve
+with one reviewer at the end, `architect` is the full lifecycle, and
+`product` adds a PM. Until now every build went through brainstorming, and
+the orders treated anything that went through brainstorming as feature work,
+so a typo fix got a spec, an architect, qa, and a draft PR. Name the depth in
+the request to skip the question. A depth that proves too shallow stops and
+asks to step up. A ledger from an earlier version resumes as `architect`.
+In a headless session (`claude -p`) no one can answer the depth question, so
+name the depth in the prompt.
+
+The rules live in a new `depth.md`, injected by a second SessionStart hook
+command. Claude Code shows only a preview of any hook context over 10,000
+characters, and the orders with the depth rules in them came to 11,000.
+
+The PreCompact hook prints the ledger's `Depth:` line, and with no run open it
+now prints one line asking the summary to keep a depth chosen before the
+ledger exists, instead of nothing. The spend report has a fixed `pm` column.
+
+New role, `foreman:pm`, at `product` depth only: it reviews the spec from
+the user's side before the plan, and walks the built feature against the
+spec's user stories alongside qa and the final review. Its two dispatches are
+budgeted at $2 each until a measured run corrects them.
+
 ## 0.3.4
 
 Notifications come from Claude Code itself. The plugin's Notification hook is

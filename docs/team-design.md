@@ -10,7 +10,7 @@
 
 Run the local Claude Code setup as a software team with the user as
 manager. The manager sets requirements, approves the plan, reviews the
-finished branch, and answers escalations. A lead session plus four named
+finished branch, and answers escalations. A lead session plus five named
 roles do everything in between, unattended, and survive interruptions
 without losing work.
 
@@ -18,16 +18,16 @@ without losing work.
 
 | # | Requirement | Decision |
 |---|---|---|
-| R1 | Manager gates | Two: approve the plan (Gate 1), review the finished branch (Gate 2). Everything between runs unattended. |
+| R1 | Manager gates | Two from `plan` depth up, none at `direct`: approve the plan (Gate 1), review the finished branch (Gate 2). Everything between runs unattended. |
 | R2 | Escalation | Behaviour-changing decisions stop the team and notify the manager, the way a developer asks a manager. |
-| R3 | Roster | architect, implementer, reviewer, qa. The lead is the session itself. Up to three implementers run in parallel when the plan splits cleanly. |
+| R3 | Roster | architect, implementer, reviewer, qa, and pm at product depth. The lead is the session itself. Up to three implementers run in parallel when the plan splits cleanly. |
 | R4 | Peer review | Plan review and final code review by one reviewer for a small feature, and by pairs that confer and return one joint report for a standard one. |
 | R5 | Notification | Claude Code's own desktop notification and push; no hook of foreman's. |
-| R6 | Models | architect, implementer, and reviewer on Opus. qa on Sonnet. The lead is the session model. |
+| R6 | Models | architect, implementer, reviewer, and pm on Opus. qa on Sonnet. The lead is the session model. |
 | R7 | Integration | Layer on the installed superpowers and ponytail plugins without forking their skills. |
 | R8 | Resilience | Survive network disconnect, laptop sleep, usage limits, and laptop shutdown with no lost work and a deterministic resume. |
 | R9 | Quality | Thin documents, lean comments, clean commit history, update in place instead of appending. |
-| R10 | Budget | Every plan carries a USD estimate per phase; the lead reports actual spend against it in the ledger and at Gate 2. Report only. |
+| R10 | Budget | Every `architect` and `product` plan carries a USD estimate per phase; the lead reports actual spend against it in the ledger and at Gate 2. Report only. |
 
 ## 3. Architecture
 
@@ -51,10 +51,12 @@ architect pair and the final reviewer pair of a standard feature.
 Everything else is an ordinary subagent. Teammates run in-process
 (Ghostty, no tmux).
 
-**When the team model applies.** Feature work: anything that goes
-through brainstorming or has a plan. Questions, one-file fixes, and
-explicit "just do it" requests are handled directly by the lead. The
-escalation list and notification hooks apply always.
+**How much of the team applies.** The lead asks the manager for a
+depth before any code change: `direct`, `plan`, `architect`, or
+`product`. Section 4 is the `architect` and `product` lifecycle;
+`docs/superpowers/specs/2026-09-28-depth-levels-design.md` says what the
+other two skip. Questions get an answer and no depth question. The
+escalation list applies always.
 
 ## 4. Lifecycle and gates
 
@@ -117,7 +119,7 @@ intake → spec → plan → plan review → GATE 1 → execution
 
 ## 5. Roles
 
-Four files in `~/.claude/agents/`. Rules common to every role:
+Five files in the plugin's `agents/`. Rules common to every role:
 
 - Read the brief. Ask before starting if it is ambiguous. Break the work
   into a step checklist, work it in order, report steps with done marks.
@@ -249,6 +251,21 @@ Acceptance criteria: - <criterion> — PASS | FAIL — <evidence>
 Bugs: - <title> — repro steps — regression test <path> — commit <sha>
 ```
 
+### 5.5 pm
+
+| Field | Value |
+|---|---|
+| description | Reviews a spec from the user's side before the plan, and the built feature against the spec's user stories at the end. Use at product depth only, in spec mode after brainstorming and in acceptance mode alongside qa and the final review. Does not edit code. |
+| model | `opus` |
+| disallowedTools | `Edit, Write, NotebookEdit` |
+| color | `blue` |
+
+**Spec mode** checks who the user is, testable acceptance criteria, empty,
+error and loading states, copy, accessibility basics, and scope to cut. No
+workspace exists yet, so it writes no file. **Acceptance mode** walks each
+user story in the running app and reports flows that work but confuse; qa
+covers whether it breaks. Blocking items join the fix wave.
+
 ## 6. Peer review protocol
 
 Standard tier only: the architect pair (step 3) and the final reviewer
@@ -347,6 +364,7 @@ This design adds, inside the same workspace:
   a UTC time:
   `Phase: plan-review | gate-1 | execution | final-review | gate-2 | done`,
   `Gate 1: approved <timestamp>`, `Gate 2: <decision> <timestamp>`,
+  `Depth: direct | plan | architect | product — <why>`,
   `Tier: small | standard — <why>`, `Lenses: <a>, <b>`,
   `Batch: tasks <n,m> — <branch>, <branch>`,
   `Escalation: ... — pending | — answered: ...`.

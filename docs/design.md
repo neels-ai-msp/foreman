@@ -20,7 +20,7 @@ Ship the agent team as a Claude Code plugin named `foreman`, hosted in the publi
 | Prerequisites | `superpowers` declared in `dependencies` in cross-marketplace form, since a bare name resolves only inside the foreman marketplace. macOS tools, `gh` auth, Agent Teams env, the two resilience settings, and the notification channel are checked by `/foreman:setup`, which offers to apply the settings a plugin cannot set itself. `ponytail` is optional: the implementer's prompt carries its smallest-change rule, and the doctor reports a missing ponytail as WARN with the install commands, so passing setup never requires trusting a new marketplace. |
 | Trust boundary | A repo's ledger text is untrusted input. Both hooks that read it fence it as data, allow only printable ASCII and strip `"`, `<` and `>` — `session-start.sh` strips `;` as well, since it joins ledgers with `; ` — and cap what they print before it reaches the lead: `session-start.sh` fences at most five ledgers with phases cut to 120 characters, `pre-compact.sh` one ledger. The manager's unfenced startup message carries a count and no repo text at all, since prose needs no structural character to forge authority. |
 | Version | `version` in `plugin.json` only, starting at `0.1.0`. Bumped on every release; users update with `claude plugin update foreman@foreman`. |
-| Budget | Every plan carries a USD estimate per phase from `budget.md`; `scripts/usage.py` reports actual spend from the session transcripts into the ledger and `spend.md`. Report only, list price, no option. Design: `docs/superpowers/specs/2026-09-11-token-budget-design.md`. |
+| Budget | Every `architect` and `product` plan carries a USD estimate per phase from `budget.md`; `scripts/usage.py` reports actual spend from the session transcripts into the ledger and `spend.md`. Report only, list price, no option. Design: `docs/superpowers/specs/2026-09-11-token-budget-design.md`. |
 | License | MIT, so that going public needs no relicensing. Change before publishing if you prefer otherwise. |
 
 ## 3. Layout
@@ -31,14 +31,15 @@ foreman/
 ├── .claude-plugin/
 │   ├── plugin.json          name, version, dependencies, userConfig
 │   └── marketplace.json     single entry, source "./"
-├── agents/                  architect.md, implementer.md, reviewer.md, qa.md
+├── agents/                  architect.md, implementer.md, reviewer.md, qa.md, pm.md
 ├── hooks/hooks.json         SessionStart (startup|clear|compact), PreCompact
 ├── scripts/
-│   ├── session-start.sh     orders + ledger message + caffeinate, one JSON output
+│   ├── session-start.sh     run twice: `orders`, then `depth` + ledger message + caffeinate
 │   ├── usage.py             spend report from the session transcripts
 │   ├── pre-compact.sh       compaction instructions that keep the run's state
 │   └── selftest.sh          runnable check for the two hooks
 ├── orders.md                the standing orders, verbatim
+├── depth.md                 the depth rules, the second half of the orders
 ├── budget.md                per-dispatch cost baseline and the estimating recipe
 ├── skills/setup/
 │   ├── SKILL.md             /foreman:setup
@@ -60,9 +61,9 @@ foreman/
 
 - **Agents.** The plugin's agent files are the source of truth; the migrated originals are kept only in the migration backup. Against those originals: the reviewer and architect descriptions say "Does not edit code." instead of "Read-only." (their Bash is unrestricted), and their pair-protocol sentence names the findings file as the one file they may write; the implementer no longer preloads `ponytail:ponytail` and carries the smallest-change rule in its own prompt. Body references to role names become `foreman:architect`, `foreman:reviewer`, and so on where a role is named as a dispatch target.
 - **Standing orders** (`orders.md`). Same text as the current `~/.claude/CLAUDE.md` with six edits: roles and pairs are named `foreman:<role>` wherever they are dispatch targets, "live in `~/.claude/agents`" becomes "ship with the foreman plugin", and the hook line "the SessionStart hook prints it" stays true.
-- **session-start.sh.** Gains a third job: read `orders.md` from `${CLAUDE_PLUGIN_ROOT}` and include it in `additionalContext` ahead of any ledger notice. Honours `CLAUDE_PLUGIN_OPTION_KEEP_AWAKE`. Runs on `startup|clear|compact` so orders survive compaction, matching superpowers.
+- **session-start.sh.** Gains a third job: read `orders.md` from `${CLAUDE_PLUGIN_ROOT}` and include it in `additionalContext`. Since 0.4.0 it runs twice, as `session-start.sh orders` and `session-start.sh depth`, because Claude Code files any hook context over 10,000 characters away and shows the lead only a preview; the second run carries `depth.md` and the ledger notice, and the selftest holds each half under 9,500. Honours `CLAUDE_PLUGIN_OPTION_KEEP_AWAKE`. Runs on `startup|clear|compact` so orders survive compaction, matching superpowers.
 - **notify.sh.** Removed in 0.3.4. Claude Code posts its own notification for permission prompts, idle waits and `PushNotification` on iTerm2 (OSC 9), Ghostty (OSC 777) and Kitty (OSC 99), and rings the bell on Apple Terminal; a Notification hook fires alongside that, not instead of it, so the script was a second banner. `preferredNotifChannel` in settings picks the channel, and the doctor reports `notifications_disabled`.
-- **pre-compact.sh.** New. Runs on every compaction, manual or automatic, and prints instructions for the summary: keep the open run's ledger path and phase, the plan and spec paths, the branch and worktrees, pending escalations, the tier, and the last `Spend:` line; drop the intake conversation and quoted plan, spec, or review text. Silent when no team run is open.
+- **pre-compact.sh.** New. Runs on every compaction, manual or automatic, and prints instructions for the summary: keep the open run's ledger path, phase and depth, the plan and spec paths, the branch and worktrees, pending escalations, the tier, and the last `Spend:` line; drop the intake conversation and quoted plan, spec, or review text. With no team run open it prints one line asking the summary to keep a depth the manager chose, since at `architect` and `product` the ledger only appears after brainstorming.
 - **hooks.json.** Both hooks reference scripts via `"${CLAUDE_PLUGIN_ROOT}"/scripts/...`.
 
 ## 5. `/foreman:setup`
@@ -97,7 +98,7 @@ Release: bump `version` in `plugin.json`, add a CHANGELOG entry, merge to `main`
 1. `claude plugin validate .` passes.
 2. `scripts/selftest.sh` passes.
 3. Plugin installed on this machine from the local checkout, the manual files migrated, and the doctor reports all green. The GitHub path, including private-repo access, is exercised by the post-merge re-register.
-4. A fresh session in the throwaway repo: the lead can quote the first line of its standing orders, lists `foreman:architect`, `foreman:implementer`, `foreman:reviewer`, `foreman:qa`, and a dispatched `foreman:implementer` reports that its preloaded skills are present.
+4. A fresh session in the throwaway repo: the lead can quote the first line of its standing orders, lists `foreman:architect`, `foreman:implementer`, `foreman:reviewer`, `foreman:qa`, `foreman:pm`, and a dispatched `foreman:implementer` reports that its preloaded skills are present.
 5. The `keep_awake` option set to false stops caffeinate from starting.
 6. The `notifications` option off makes `apply-setup.py --resilience` turn `inputNeededNotifEnabled` and `agentPushNotifEnabled` off and set `preferredNotifChannel` to `notifications_disabled`; on, it turns them on and resets `notifications_disabled` to `auto`.
 

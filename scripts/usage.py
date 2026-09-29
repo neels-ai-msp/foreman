@@ -25,7 +25,7 @@ PRICES = {
 FALLBACK = "claude-fable-5-1"  # an unknown model over-reports rather than under-reports
 PHASES = ["intake", "plan-review", "execution", "final-review"]
 FOLD = {"gate-1": "plan-review", "qa": "final-review", "gate-2": "final-review"}  # qa was a phase before 0.3.0
-ROLES = ["lead", "architect", "implementer", "reviewer", "qa"]
+ROLES = ["lead", "architect", "implementer", "reviewer", "qa", "pm"]
 TOKEN_KINDS = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
 
 
